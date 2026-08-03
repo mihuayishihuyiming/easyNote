@@ -5,6 +5,8 @@ const storage = require('../../utils/storage');
 const OPS = ['+', '-', '×', '÷'];
 const MAX_EXPR_LEN = 30;
 const MARK_TEXTS = ['不该花！', '请注意节约！', '想想自己的兜子！'];
+const MARK_WARN_TEXTS = ['钱钱钱！！请节约', '请注意立即停止非正常消费！！', '想想自己在干什么！你的钱呢！'];
+const MARK_WARN_THRESHOLD = 3;
 
 function pad2(n) {
   return n < 10 ? '0' + n : '' + n;
@@ -70,6 +72,42 @@ Page({
   onLoad() {
     this.setData({ statsMonthLabel: this.formatMonthLabel(this.data.statsMonth) });
     this.refreshRecords();
+  },
+
+  onShow() {
+    // 进入小程序时：若当天双击标红次数达到阈值，弹出随机消费提醒
+    this.checkMarkWarn();
+  },
+
+  checkMarkWarn() {
+    if (storage.getMarkCount(todayStr()) >= MARK_WARN_THRESHOLD) {
+      this.showMarkWarnDialog();
+    }
+  },
+
+  showMarkWarnDialog() {
+    const text = MARK_WARN_TEXTS[Math.floor(Math.random() * MARK_WARN_TEXTS.length)];
+    this._warnStep = 0;
+    const open = () => {
+      wx.showModal({
+        title: '消费提醒',
+        content: text,
+        showCancel: false,
+        confirmText: '确定',
+        confirmColor: '#e64340',
+        success: res => {
+          if (!res.confirm) return;
+          if (this._warnStep === 0) {
+            // 第一次点击确认：立即重新弹出，必须再点一次才能真正关闭
+            this._warnStep = 1;
+            open();
+          } else {
+            this._warnStep = 0;
+          }
+        }
+      });
+    };
+    open();
   },
 
   // 分享给好友/朋友圈（个人主体小程序同样支持转发）
@@ -524,6 +562,7 @@ Page({
     } else {
       const text = MARK_TEXTS[Math.floor(Math.random() * MARK_TEXTS.length)];
       storage.update(id, { marked: true, markText: text });
+      storage.incrMarkCount(todayStr());
     }
     this.refreshRecords();
     if (this.data.statsDetail) this.refreshStatsDetail();

@@ -1,5 +1,6 @@
 // 本地存储：所有记账数据保存在手机本机（wx Storage），完全离线可用
 const STORAGE_KEY = 'simple_account_records_v1';
+const MARK_COUNT_KEY = 'mark_daily_counts_v1';
 
 function readAll() {
   try {
@@ -53,4 +54,22 @@ function clear() {
   }
 }
 
-module.exports = { add, update, remove, getById, readAll, clear };
+function getMarkCount(date) {
+  try {
+    const map = wx.getStorageSync(MARK_COUNT_KEY);
+    if (map && Object.prototype.toString.call(map) === '[object Object]') {
+      return map[date] || 0;
+    }
+  } catch (e) {
+    // 忽略读取失败
+  }
+  return 0;
+}
+
+function incrMarkCount(date) {
+  const map = wx.getStorageSync(MARK_COUNT_KEY) || {};
+  map[date] = (map[date] || 0) + 1;
+  wx.setStorageSync(MARK_COUNT_KEY, map);
+}
+
+module.exports = { add, update, remove, getById, readAll, clear, getMarkCount, incrMarkCount };

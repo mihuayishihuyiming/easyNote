@@ -24,6 +24,7 @@ const lastMonth =
   pad2(lastMonthDate.getDate());
 
 const memStore = {};
+const modalCalls = [];
 global.wx = {
   getStorageSync: key => memStore[key],
   setStorageSync: (key, value) => {
@@ -34,7 +35,9 @@ global.wx = {
   },
   showToast: () => {},
   showActionSheet: () => {},
-  showModal: () => {}
+  showModal: opts => {
+    modalCalls.push(opts);
+  }
 };
 
 let pageInstance = null;
@@ -110,6 +113,25 @@ assert('双击后标记为红色', markedRec.marked === true);
 assert('提醒语来自列表', ['不该花！', '请注意节约！', '想想自己的兜子！'].indexOf(markedRec.markText) >= 0);
 pageInstance.toggleMark.call(pageInstance, ids[0]);
 assert('再次双击取消标记', storage.getById(ids[0]).marked !== true);
+
+// 单日标红满 3 次：进入小程序弹出随机提醒（需双击确认关闭）
+modalCalls.length = 0;
+pageInstance.checkMarkWarn.call(pageInstance);
+assert('未达阈值不弹窗', modalCalls.length === 0);
+
+pageInstance.toggleMark.call(pageInstance, ids[1]);
+pageInstance.toggleMark.call(pageInstance, ids[2]);
+assert('单日标记计数为 3', storage.getMarkCount(today) === 3);
+
+modalCalls.length = 0;
+pageInstance.checkMarkWarn.call(pageInstance);
+assert('达到阈值弹出提醒', modalCalls.length === 1);
+assert('提醒语来自三选一', ['钱钱钱！！请节约', '请注意立即停止非正常消费！！', '想想自己在干什么！你的钱呢！'].indexOf(modalCalls[0].content) >= 0);
+
+modalCalls[0].success({ confirm: true });
+assert('第一次点击确认后重新弹出', modalCalls.length === 2);
+modalCalls[1].success({ confirm: true });
+assert('第二次点击确认后才关闭', modalCalls.length === 2);
 
 // 日期标签
 assert('今天标签', pageInstance.formatDateLabel(today) === '今天');
