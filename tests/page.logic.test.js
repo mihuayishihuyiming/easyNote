@@ -25,6 +25,7 @@ const lastMonth =
 
 const memStore = {};
 const modalCalls = [];
+let clipboardData = '';
 global.wx = {
   getStorageSync: key => memStore[key],
   setStorageSync: (key, value) => {
@@ -33,8 +34,13 @@ global.wx = {
   removeStorageSync: key => {
     delete memStore[key];
   },
+  nextTick: cb => cb(),
   showToast: () => {},
   showActionSheet: () => {},
+  setClipboardData: opts => {
+    clipboardData = opts.data;
+    if (opts.success) opts.success();
+  },
   showModal: opts => {
     modalCalls.push(opts);
   }
@@ -132,6 +138,42 @@ modalCalls[0].success({ confirm: true });
 assert('第一次点击确认后重新弹出', modalCalls.length === 2);
 modalCalls[1].success({ confirm: true });
 assert('第二次点击确认后才关闭', modalCalls.length === 2);
+
+// 我的记账日记
+assert('已记账天数=3（按日期去重）', pageInstance.data.recordDays === 3);
+pageInstance.onOpenDiary.call(pageInstance);
+const diary = pageInstance.data.diary;
+assert('日记-已记账天数', diary && diary.days === 3);
+assert('日记-已记账笔数', diary && diary.records === 5);
+assert('日记-大手大脚次数', diary && diary.bigSpendDays === 1);
+assert('日记-后悔次数', diary && diary.totalMarks === 3);
+pageInstance.onCloseDiary.call(pageInstance);
+assert('关闭日记后回到统计', pageInstance.data.diary === null);
+
+// 联系作者浮窗与复制
+pageInstance.onOpenFeedback.call(pageInstance);
+assert('反馈浮窗打开', pageInstance.data.feedbackOpen === true);
+pageInstance.onCopyContact.call(pageInstance, { currentTarget: { dataset: { text: 'MiHuaforever' } } });
+assert('复制微信号', clipboardData === 'MiHuaforever');
+pageInstance.onCopyContact.call(pageInstance, { currentTarget: { dataset: { text: '1633973878@qq.com' } } });
+assert('复制邮箱', clipboardData === '1633973878@qq.com');
+pageInstance.onCloseFeedback.call(pageInstance);
+assert('反馈浮窗关闭', pageInstance.data.feedbackOpen === false);
+
+// 日记界面再次点击已记账 / 日期返回统计
+pageInstance.onOpenDiary.call(pageInstance);
+assert('再次打开日记成功', pageInstance.data.diary !== null);
+pageInstance.onOpenDiary.call(pageInstance);
+assert('日记中再次点击已记账回到统计', pageInstance.data.diary === null);
+pageInstance.onOpenDiary.call(pageInstance);
+pageInstance.onCloseDiary.call(pageInstance);
+assert('返回按钮关闭日记', pageInstance.data.diary === null);
+pageInstance.onStatsMonthChange.call(pageInstance, { detail: { value: lastMonth.slice(0, 7) } });
+assert('统计页点击日期切换月份', pageInstance.data.statsMonth === lastMonth.slice(0, 7));
+pageInstance.onBackToCurrentMonth.call(pageInstance);
+assert('回到本月后月份正确', pageInstance.data.statsMonth === monthPrefix);
+const tParts = today.split('-');
+assert('日记日期显示今天的年月日', pageInstance.data.todayDateText === +tParts[0] + '年' + +tParts[1] + '月' + +tParts[2] + '日');
 
 // 日期标签
 assert('今天标签', pageInstance.formatDateLabel(today) === '今天');

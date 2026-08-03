@@ -72,4 +72,24 @@ function incrMarkCount(date) {
   wx.setStorageSync(MARK_COUNT_KEY, map);
 }
 
-module.exports = { add, update, remove, getById, readAll, clear, getMarkCount, incrMarkCount };
+function getMarkCountMap() {
+  try {
+    const map = wx.getStorageSync(MARK_COUNT_KEY);
+    if (map && Object.prototype.toString.call(map) === '[object Object]') return map;
+  } catch (e) {
+    // 忽略读取失败
+  }
+  return {};
+}
+
+module.exports = {
+  add,
+  update,
+  remove,
+  getById,
+  readAll,
+  clear,
+  getMarkCount,
+  incrMarkCount,
+  getMarkCountMap
+};

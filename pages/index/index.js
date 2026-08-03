@@ -29,6 +29,11 @@ function formatTime(d) {
   return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
 
+function formatDateCN(dateStr) {
+  const p = dateStr.split('-');
+  return +p[0] + '年' + +p[1] + '月' + +p[2] + '日';
+}
+
 Page({
   data: {
     activeTab: 'calc', // calc | records
@@ -53,11 +58,13 @@ Page({
     groups: [],
     today: { expense: '0.00', income: '' },
     yesterday: { expense: '0.00', income: '' },
+    recordDays: 0,
 
     // 统计状态
     currentMonth: todayStr().slice(0, 7),
     statsMonth: todayStr().slice(0, 7),
     statsMonthLabel: '',
+    todayDateText: formatDateCN(todayStr()),
     stats: {
       expenseTotal: '0.00',
       incomeTotal: '0.00',
@@ -66,7 +73,10 @@ Page({
       expenseCats: [],
       incomeCats: []
     },
-    statsDetail: null
+    statsDetail: null,
+    diary: null,
+    posterPreview: '',
+    feedbackOpen: false
   },
 
   onLoad() {
@@ -112,6 +122,13 @@ Page({
 
   // 分享给好友/朋友圈（个人主体小程序同样支持转发）
   onShareAppMessage() {
+    if (this.data.diary && this._diaryPoster) {
+      return {
+        title: '我的记账日记',
+        path: 'pages/index/index',
+        imageUrl: this._diaryPoster
+      };
+    }
     return {
       title: '随随随记：计算器式离线记账',
       path: 'pages/index/index'
@@ -316,6 +333,7 @@ Page({
 
   refreshRecords() {
     const all = storage.readAll();
+    const recordDays = new Set(all.map(r => r.date).filter(Boolean)).size;
     const now = new Date();
     const monthPrefix = now.getFullYear() + '-' + pad2(now.getMonth() + 1);
     const today = todayStr();
@@ -346,6 +364,7 @@ Page({
     const groups = this.groupByDate(filtered);
 
     this.setData({
+      recordDays,
       groups,
       summary: {
         income: formatMoney(income),
@@ -365,6 +384,252 @@ Page({
   },
 
   // ---------- 统计 ----------
+
+  onOpenDiary() {
+    // 已在日记界面时，再次点击「已记账」回到统计
+    if (this.data.diary) {
+      this.onCloseDiary();
+      return;
+    }
+    const records = storage.readAll();
+    const days = new Set(records.map(r => r.date).filter(Boolean)).size;
+    const markMap = storage.getMarkCountMap();
+    let totalMarks = 0;
+    let bigSpendDays = 0;
+    Object.keys(markMap).forEach(key => {
+      totalMarks += markMap[key];
+      if (markMap[key] >= MARK_WARN_THRESHOLD) bigSpendDays += 1;
+    });
+    this.setData(
+      {
+        diary: {
+          days,
+          records: records.length,
+          bigSpendDays,
+          totalMarks
+        }
+      },
+      () => {
+        // 日记渲染完成后生成分享海报
+        wx.nextTick(() => {
+          this.generateDiaryPoster()
+            .then(path => {
+              this._diaryPoster = path;
+            })
+            .catch(() => {
+              // 生成失败不阻塞日记查看，保存/分享时会重试
+            });
+        });
+      }
+    );
+  },
+
+  onCloseDiary() {
+    this._diaryPoster = null;
+    this.setData({ diary: null });
+  },
+
+  generateDiaryPoster() {
+    return new Promise((resolve, reject) => {
+      if (!wx.createSelectorQuery) {
+        reject(new Error('当前环境不支持生成海报'));
+        return;
+      }
+      wx.createSelectorQuery()
+        .in(this)
+        .select('#diaryCanvas')
+        .fields({ node: true, size: true })
+        .exec(res => {
+          if (!res || !res[0] || !res[0].node) {
+            reject(new Error('海报画布未就绪'));
+            return;
+          }
+          const canvas = res[0].node;
+          const ctx = canvas.getContext('2d');
+          const dpr = (wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : wx.getSystemInfoSync().pixelRatio) || 2;
+          const W = 600;
+          const H = 800;
+          canvas.width = W * dpr;
+          canvas.height = H * dpr;
+          ctx.scale(dpr, dpr);
+          ctx.textBaseline = 'middle';
+
+          // 背景渐变
+          const grad = ctx.createLinearGradient(0, 0, 0, H);
+          grad.addColorStop(0, '#FFF3E7');
+          grad.addColorStop(1, '#FFFFFF');
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, W, H);
+
+          // 装饰圆
+          ctx.fillStyle = 'rgba(255, 177, 77, 0.18)';
+          ctx.beginPath();
+          ctx.arc(540, 60, 70, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(60, 760, 60, 0, Math.PI * 2);
+          ctx.fill();
+
+          // 标题
+          ctx.fillStyle = '#1F2329';
+          ctx.font = 'bold 38px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('我的记账日记', 300, 96);
+
+          // 时间
+          const now = new Date();
+          const timeStr =
+            now.getFullYear() +
+            '年' +
+            (now.getMonth() + 1) +
+            '月' +
+            now.getDate() +
+            '日 ' +
+            pad2(now.getHours()) +
+            ':' +
+            pad2(now.getMinutes());
+          ctx.fillStyle = '#9AA0A6';
+          ctx.font = '22px sans-serif';
+          ctx.fillText(timeStr, 300, 142);
+
+          // 分隔线
+          ctx.strokeStyle = '#F0E3D6';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(60, 175);
+          ctx.lineTo(540, 175);
+          ctx.stroke();
+
+          // 数据行
+          const diary = this.data.diary || {};
+          const rows = [
+            { icon: '📅', label: '已记账天数', value: (diary.days || 0) + ' 天', bg: '#FFF1E6' },
+            { icon: '🧾', label: '已记账笔数', value: (diary.records || 0) + ' 笔', bg: '#E7F8EE' },
+            { icon: '😜', label: '大手大脚次数', value: (diary.bigSpendDays || 0) + ' 次', bg: '#FFE3E3' },
+            { icon: '😭', label: '后悔过', value: (diary.totalMarks || 0) + ' 次', bg: '#E8F1FF' }
+          ];
+          let y = 250;
+          rows.forEach(row => {
+            ctx.fillStyle = row.bg;
+            ctx.beginPath();
+            ctx.arc(100, y, 34, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = '30px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(row.icon, 100, y + 2);
+            ctx.fillStyle = '#4B5563';
+            ctx.font = '28px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(row.label, 160, y + 2);
+            ctx.fillStyle = '#FF7A1A';
+            ctx.font = 'bold 32px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(row.value, 540, y + 2);
+            y += 112;
+          });
+
+          // 底部标语 + 右下角水印
+          ctx.fillStyle = '#9AA0A6';
+          ctx.font = '22px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('记录每一笔，珍惜每一分～', 300, 738);
+          ctx.fillStyle = '#C0C4CC';
+          ctx.font = '20px sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText('随随随记', 558, 774);
+
+          wx.canvasToTempFilePath(
+            {
+              canvas,
+              fileType: 'png',
+              success: r => resolve(r.tempFilePath),
+              fail: err => reject(err)
+            },
+            this
+          );
+        });
+    });
+  },
+
+  onSaveDiaryImage() {
+    const finish = path => {
+      wx.saveImageToPhotosAlbum({
+        filePath: path,
+        success: () => wx.showToast({ title: '已保存到相册', icon: 'success' }),
+        fail: err => {
+          const msg = (err && err.errMsg) || '';
+          if (msg.indexOf('auth') >= 0 || msg.indexOf('deny') >= 0) {
+            wx.showModal({
+              title: '需要相册权限',
+              content: '请在设置中允许「保存图片到相册」，才能保存海报',
+              confirmText: '去设置',
+              success: res => {
+                if (res.confirm) wx.openSetting();
+              }
+            });
+          } else {
+            wx.showToast({ title: '保存失败', icon: 'none' });
+          }
+        }
+      });
+    };
+    if (this._diaryPoster) {
+      finish(this._diaryPoster);
+    } else {
+      wx.showLoading({ title: '生成中...' });
+      this.generateDiaryPoster()
+        .then(path => {
+          wx.hideLoading();
+          this._diaryPoster = path;
+          finish(path);
+        })
+        .catch(() => {
+          wx.hideLoading();
+          wx.showToast({ title: '海报生成失败', icon: 'none' });
+        });
+    }
+  },
+
+  onPreviewDiaryPoster() {
+    const show = path => this.setData({ posterPreview: path });
+    if (this._diaryPoster) {
+      show(this._diaryPoster);
+      return;
+    }
+    wx.showLoading({ title: '生成中...' });
+    this.generateDiaryPoster()
+      .then(path => {
+        wx.hideLoading();
+        this._diaryPoster = path;
+        show(path);
+      })
+      .catch(() => {
+        wx.hideLoading();
+        wx.showToast({ title: '海报生成失败', icon: 'none' });
+      });
+  },
+
+  onClosePosterPreview() {
+    this.setData({ posterPreview: '' });
+  },
+
+  onOpenFeedback() {
+    this.setData({ feedbackOpen: true });
+  },
+
+  onCloseFeedback() {
+    this.setData({ feedbackOpen: false });
+  },
+
+  onCopyContact(e) {
+    const text = e.currentTarget.dataset.text;
+    wx.setClipboardData({
+      data: text,
+      success: () => wx.showToast({ title: '已复制', icon: 'success' })
+    });
+  },
+
+  noop() {},
 
   formatMonthLabel(month) {
     const parts = month.split('-');

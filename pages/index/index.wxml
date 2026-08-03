@@ -169,18 +169,79 @@
   <!-- ============ 统计 ============ -->
   <view class="records-view" wx:if="{{activeTab === 'stats'}}">
     <view class="stats-period">
-      <picker mode="date" fields="month" value="{{statsMonth}}" bindchange="onStatsMonthChange">
-        <view class="month-picker">
-          <text class="month-icon">📅</text>
-          <text class="month-text">{{statsMonthLabel}}</text>
-          <text class="month-arrow">▾</text>
+      <view class="diary-entry" bindtap="onOpenDiary">
+        <text class="diary-icon">📖</text>
+        <text class="diary-text">已记账：{{recordDays}}天</text>
+      </view>
+      <view class="stats-tools">
+        <picker wx:if="{{!diary}}" mode="date" fields="month" value="{{statsMonth}}" bindchange="onStatsMonthChange">
+          <view class="month-picker">
+            <text class="month-icon">📅</text>
+            <text class="month-text">{{statsMonthLabel}}</text>
+            <text class="month-arrow">▾</text>
+          </view>
+        </picker>
+        <view class="diary-date" wx:else>
+          <text class="diary-date-text">{{todayDateText}}</text>
         </view>
-      </picker>
-      <view class="back-month-btn" wx:if="{{statsMonth !== currentMonth}}" bindtap="onBackToCurrentMonth">回到本月</view>
+        <view class="back-month-btn" wx:if="{{statsMonth !== currentMonth && !diary}}" bindtap="onBackToCurrentMonth">🔄</view>
+      </view>
     </view>
 
+    <!-- 我的记账日记 -->
+    <block wx:if="{{diary}}">
+      <view class="detail-head">
+        <view class="detail-back" bindtap="onCloseDiary">‹ 返回</view>
+        <text class="detail-title">我的记账日记</text>
+      </view>
+      <scroll-view scroll-y="{{true}}" class="list-scroll">
+        <view class="card diary-card">
+          <view class="diary-row">
+            <view class="diary-left">
+              <view class="diary-icon days">📅</view>
+              <text class="diary-row-label">已记账天数</text>
+            </view>
+            <text class="diary-row-value">{{diary.days}} 天</text>
+          </view>
+          <view class="diary-row">
+            <view class="diary-left">
+              <view class="diary-icon records">🧾</view>
+              <text class="diary-row-label">已记账笔数</text>
+            </view>
+            <text class="diary-row-value">{{diary.records}} 笔</text>
+          </view>
+          <view class="diary-row">
+            <view class="diary-left">
+              <view class="diary-icon spend">😜</view>
+              <text class="diary-row-label">大手大脚次数</text>
+            </view>
+            <text class="diary-row-value">{{diary.bigSpendDays}} 次</text>
+          </view>
+          <view class="diary-row">
+            <view class="diary-left">
+              <view class="diary-icon regret">😭</view>
+              <text class="diary-row-label">后悔过</text>
+            </view>
+            <text class="diary-row-value">{{diary.totalMarks}} 次</text>
+          </view>
+        </view>
+        <view class="diary-tip">记录每一笔，珍惜每一分～</view>
+      </scroll-view>
+      <view class="diary-fab-group">
+        <view class="diary-share-fab" bindtap="onPreviewDiaryPoster">
+          <text class="diary-share-fab-icon">📤</text>
+          <text class="diary-share-fab-text">分享</text>
+        </view>
+        <view class="diary-share-fab feedback" bindtap="onOpenFeedback">
+          <text class="diary-share-fab-icon">✉️</text>
+          <text class="diary-share-fab-text">反馈</text>
+        </view>
+      </view>
+      <canvas type="2d" id="diaryCanvas" class="diary-canvas"></canvas>
+    </block>
+
     <!-- 分类下钻：该月该分类的消费明细 -->
-    <block wx:if="{{statsDetail}}">
+    <block wx:elif="{{statsDetail}}">
       <view class="detail-head">
         <view class="detail-back" bindtap="onStatsDetailBack">‹ 返回</view>
         <text class="detail-title">{{statsDetail.title}} · {{statsDetail.monthLabel}}</text>
@@ -289,5 +350,47 @@
         <view class="empty-sub">记一笔后这里会显示分类统计</view>
       </view>
     </block>
+  </view>
+
+  <!-- 海报预览：下方提供下载与分享 -->
+  <view class="poster-mask" wx:if="{{posterPreview}}" bindtap="onClosePosterPreview" catchtouchmove="noop">
+    <view class="poster-modal" catchtap="noop">
+      <view class="poster-title">我的记账日记</view>
+      <image class="poster-img" src="{{posterPreview}}" mode="aspectFit"></image>
+      <view class="poster-actions">
+        <button class="poster-btn save" bindtap="onSaveDiaryImage">
+          <text class="poster-btn-icon">⬇️</text>
+          <text>下载</text>
+        </button>
+        <button class="poster-btn send" open-type="share">
+          <text class="poster-btn-icon">📤</text>
+          <text>分享</text>
+        </button>
+      </view>
+      <view class="poster-close" bindtap="onClosePosterPreview">✕</view>
+    </view>
+  </view>
+
+  <!-- 联系作者浮窗 -->
+  <view class="poster-mask" wx:if="{{feedbackOpen}}" bindtap="onCloseFeedback" catchtouchmove="noop">
+    <view class="feedback-modal" catchtap="noop">
+      <view class="feedback-title">联系作者</view>
+      <view class="feedback-sub">有建议或问题，欢迎随时联系～</view>
+      <view class="feedback-row">
+        <view class="feedback-top">
+          <text class="feedback-label">微信号</text>
+          <text class="feedback-value">MiHuaforever</text>
+        </view>
+        <button class="feedback-copy" bindtap="onCopyContact" data-text="MiHuaforever">复制</button>
+      </view>
+      <view class="feedback-row">
+        <view class="feedback-top">
+          <text class="feedback-label">邮箱</text>
+          <text class="feedback-value">1633973878@qq.com</text>
+        </view>
+        <button class="feedback-copy" bindtap="onCopyContact" data-text="1633973878@qq.com">复制</button>
+      </view>
+      <view class="poster-close" bindtap="onCloseFeedback">✕</view>
+    </view>
   </view>
 </view>

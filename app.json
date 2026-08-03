@@ -9,6 +9,11 @@
     "backgroundColor": "#f4f5f7",
     "backgroundTextStyle": "dark"
   },
+  "permission": {
+    "scope.writePhotosAlbum": {
+      "desc": "用于保存记账日记分享图到相册"
+    }
+  },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"
