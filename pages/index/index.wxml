@@ -1,0 +1,293 @@
+<view class="page">
+  <!-- 顶部切换：记一笔 / 明细 -->
+  <view class="seg-wrap">
+    <view class="seg">
+      <view class="seg-item {{activeTab === 'calc' ? 'active' : ''}}" bindtap="switchTab" data-tab="calc">记一笔</view>
+      <view class="seg-item {{activeTab === 'records' ? 'active' : ''}}" bindtap="switchTab" data-tab="records">明细</view>
+      <view class="seg-item {{activeTab === 'stats' ? 'active' : ''}}" bindtap="switchTab" data-tab="stats">统计</view>
+    </view>
+  </view>
+
+  <!-- ============ 记一笔（计算器） ============ -->
+  <view class="calc-view" wx:if="{{activeTab === 'calc'}}">
+    <view class="card display-card">
+      <view class="edit-tip" wx:if="{{editId}}">正在修改记录，保存后返回明细</view>
+      <view class="expr-line {{calcError ? 'err' : ''}}">
+        {{calcError ? calcError : (displayExpr || '输入金额开始记账')}}
+      </view>
+      <view class="result-line">{{preview}}</view>
+    </view>
+
+    <view class="card type-card">
+      <picker mode="date" value="{{recordDate}}" bindchange="onDateChange">
+        <view class="date-row">
+          <text class="date-icon">📅</text>
+          <text class="date-text">{{recordDateLabel}}</text>
+          <text class="date-arrow">›</text>
+        </view>
+      </picker>
+
+      <view class="type-switch">
+        <view class="type-btn expense {{type === 'expense' ? 'on' : ''}}" bindtap="onTypeChange" data-type="expense">支出</view>
+        <view class="type-btn income {{type === 'income' ? 'on' : ''}}" bindtap="onTypeChange" data-type="income">收入</view>
+      </view>
+
+      <view class="cats">
+        <view
+          wx:for="{{categories}}"
+          wx:key="key"
+          class="cat {{category === item.key ? 'on' : ''}}"
+          bindtap="onCategoryTap"
+          data-key="{{item.key}}"
+        >
+          <text class="cat-icon">{{item.icon}}</text>
+          <text class="cat-name">{{item.name}}</text>
+        </view>
+      </view>
+
+      <input
+        class="note-input"
+        placeholder="备注（可选）"
+        placeholder-class="note-placeholder"
+        value="{{note}}"
+        bindinput="onNoteInput"
+        maxlength="40"
+        confirm-type="done"
+      />
+    </view>
+
+    <view class="card keypad-card">
+      <view class="key-row">
+        <view class="key fn" bindtap="onKeyTap" data-key="C">C</view>
+        <view class="key fn" bindtap="onKeyTap" data-key="⌫">⌫</view>
+        <view class="key op" bindtap="onKeyTap" data-key="÷">÷</view>
+        <view class="key op" bindtap="onKeyTap" data-key="×">×</view>
+      </view>
+      <view class="key-row">
+        <view class="key num" bindtap="onKeyTap" data-key="7">7</view>
+        <view class="key num" bindtap="onKeyTap" data-key="8">8</view>
+        <view class="key num" bindtap="onKeyTap" data-key="9">9</view>
+        <view class="key op" bindtap="onKeyTap" data-key="-">-</view>
+      </view>
+      <view class="key-row">
+        <view class="key num" bindtap="onKeyTap" data-key="4">4</view>
+        <view class="key num" bindtap="onKeyTap" data-key="5">5</view>
+        <view class="key num" bindtap="onKeyTap" data-key="6">6</view>
+        <view class="key op" bindtap="onKeyTap" data-key="+">+</view>
+      </view>
+      <view class="key-row">
+        <view class="key num" bindtap="onKeyTap" data-key="1">1</view>
+        <view class="key num" bindtap="onKeyTap" data-key="2">2</view>
+        <view class="key num" bindtap="onKeyTap" data-key="3">3</view>
+        <view class="key op" bindtap="onKeyTap" data-key="=">=</view>
+      </view>
+      <view class="key-row">
+        <view class="key num" bindtap="onKeyTap" data-key="0">0</view>
+        <view class="key num" bindtap="onKeyTap" data-key=".">.</view>
+        <view class="key save" bindtap="onSave">{{editId ? '保存修改' : '记一笔'}}</view>
+      </view>
+    </view>
+
+    <view class="edit-actions" wx:if="{{editId}}">
+      <view class="cancel-edit" bindtap="onCancelEdit">取消编辑</view>
+    </view>
+  </view>
+
+  <!-- ============ 明细 ============ -->
+  <view class="records-view" wx:if="{{activeTab === 'records'}}">
+    <view class="card summary-card">
+      <view class="summary-item">
+        <view class="summary-label">本月收入</view>
+        <view class="summary-value income">+{{summary.income}}</view>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <view class="summary-label">本月支出</view>
+        <view class="summary-value expense">-{{summary.expense}}</view>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="summary-item">
+        <view class="summary-label">本月结余</view>
+        <view class="summary-value balance">{{summary.balance}}</view>
+      </view>
+    </view>
+
+    <view class="card day-card">
+      <view class="day-item">
+        <view class="day-label">今天</view>
+        <view class="day-amount expense">-{{today.expense}}</view>
+        <view class="day-sub income">{{today.income}}</view>
+      </view>
+      <view class="summary-divider"></view>
+      <view class="day-item">
+        <view class="day-label">昨天</view>
+        <view class="day-amount expense">-{{yesterday.expense}}</view>
+        <view class="day-sub income">{{yesterday.income}}</view>
+      </view>
+    </view>
+
+    <view class="filter-row">
+      <view class="filter-chip {{filter === 'all' ? 'on' : ''}}" bindtap="onFilterTap" data-filter="all">全部</view>
+      <view class="filter-chip {{filter === 'expense' ? 'on' : ''}}" bindtap="onFilterTap" data-filter="expense">支出</view>
+      <view class="filter-chip {{filter === 'income' ? 'on' : ''}}" bindtap="onFilterTap" data-filter="income">收入</view>
+    </view>
+
+    <scroll-view scroll-y="{{true}}" class="list-scroll" wx:if="{{groups.length}}">
+      <view class="group" wx:for="{{groups}}" wx:key="date" wx:for-item="group">
+        <view class="group-label">{{group.label}}</view>
+        <view class="card record-list">
+          <view
+            class="record {{item.marked ? 'marked' : ''}}"
+            wx:for="{{group.items}}"
+            wx:key="id"
+            wx:for-item="item"
+            bindtap="onRecordTap"
+            bindlongpress="onRecordLongPress"
+            data-id="{{item.id}}"
+          >
+            <view class="record-icon">{{item.icon}}</view>
+            <view class="record-main">
+              <view class="record-name">{{item.name}}</view>
+              <view class="record-note">{{item.note || item.expression}}</view>
+            </view>
+            <view class="record-amount {{item.type === 'income' ? 'income' : ''}} {{item.marked ? 'marked' : ''}}">
+              <text class="mark-text" wx:if="{{item.marked}}">{{item.markText}}</text>
+              <text>{{item.type === 'income' ? '+' : '-'}}{{item.amountText}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="clear-all" bindtap="onClearAll">清空全部数据</view>
+    </scroll-view>
+    <view class="empty" wx:else>
+      <view class="empty-icon">🧾</view>
+      <view class="empty-text">还没有记账记录</view>
+      <view class="empty-sub">点击「记一笔」开始记账</view>
+    </view>
+  </view>
+
+  <!-- ============ 统计 ============ -->
+  <view class="records-view" wx:if="{{activeTab === 'stats'}}">
+    <view class="stats-period">
+      <picker mode="date" fields="month" value="{{statsMonth}}" bindchange="onStatsMonthChange">
+        <view class="month-picker">
+          <text class="month-icon">📅</text>
+          <text class="month-text">{{statsMonthLabel}}</text>
+          <text class="month-arrow">▾</text>
+        </view>
+      </picker>
+      <view class="back-month-btn" wx:if="{{statsMonth !== currentMonth}}" bindtap="onBackToCurrentMonth">回到本月</view>
+    </view>
+
+    <!-- 分类下钻：该月该分类的消费明细 -->
+    <block wx:if="{{statsDetail}}">
+      <view class="detail-head">
+        <view class="detail-back" bindtap="onStatsDetailBack">‹ 返回</view>
+        <text class="detail-title">{{statsDetail.title}} · {{statsDetail.monthLabel}}</text>
+      </view>
+      <scroll-view scroll-y="{{true}}" class="list-scroll" wx:if="{{statsDetail.records.length}}">
+        <view class="card record-list">
+          <view class="record" wx:for="{{statsDetail.records}}" wx:key="id">
+            <view class="record-icon">{{item.icon}}</view>
+            <view class="record-main">
+              <view class="record-name">{{item.dateLabel}} {{item.time}}</view>
+              <view class="record-note">{{item.note || item.expression}}</view>
+              <view class="record-mark" wx:if="{{item.marked}}">{{item.markText}}</view>
+            </view>
+            <view class="record-amount {{item.marked ? 'marked' : ''}}">
+              {{item.type === 'income' ? '+' : '-'}}{{item.amountText}}
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="empty" wx:else>
+        <view class="empty-icon">🧾</view>
+        <view class="empty-text">该月该分类暂无记录</view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <scroll-view scroll-y="{{true}}" class="list-scroll" wx:if="{{stats.chart.length || stats.expenseCats.length || stats.incomeCats.length}}">
+        <!-- 条形统计图 -->
+        <view class="card chart-card" wx:if="{{stats.chart.length}}">
+          <view class="stat-head">
+            <text class="stat-title">支出条形图</text>
+            <text class="stat-total expense">{{stats.chartTotal}}</text>
+          </view>
+          <view class="chart">
+            <view
+              class="chart-col"
+              wx:for="{{stats.chart}}"
+              wx:key="key"
+              bindtap="onStatsCategoryTap"
+              data-key="{{item.key}}"
+              data-type="expense"
+            >
+              <view class="chart-amount">{{item.amountText}}</view>
+              <view class="chart-bar-wrap">
+                <view class="chart-bar" style="height: {{item.barH}}rpx;"></view>
+              </view>
+              <view class="chart-icon">{{item.icon}}</view>
+              <view class="chart-name">{{item.name}}</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 支出分类明细（点击进入该月该分类） -->
+        <view class="card stat-card" wx:if="{{stats.expenseCats.length}}">
+          <view class="stat-head">
+            <text class="stat-title">支出分类明细</text>
+            <text class="stat-total expense">{{stats.expenseTotal}}</text>
+          </view>
+          <view
+            class="stat-row"
+            wx:for="{{stats.expenseCats}}"
+            wx:key="key"
+            bindtap="onStatsCategoryTap"
+            data-key="{{item.key}}"
+            data-type="expense"
+          >
+            <view class="record-icon">{{item.icon}}</view>
+            <view class="record-main">
+              <view class="record-name">{{item.name}}</view>
+              <view class="stat-bar">
+                <view class="stat-bar-fill expense" style="width: {{item.percent}}%;"></view>
+              </view>
+            </view>
+            <view class="stat-amount">{{item.amountText}}</view>
+          </view>
+        </view>
+
+        <!-- 收入分类明细 -->
+        <view class="card stat-card" wx:if="{{stats.incomeCats.length}}">
+          <view class="stat-head">
+            <text class="stat-title">收入分类明细</text>
+            <text class="stat-total income">{{stats.incomeTotal}}</text>
+          </view>
+          <view
+            class="stat-row"
+            wx:for="{{stats.incomeCats}}"
+            wx:key="key"
+            bindtap="onStatsCategoryTap"
+            data-key="{{item.key}}"
+            data-type="income"
+          >
+            <view class="record-icon">{{item.icon}}</view>
+            <view class="record-main">
+              <view class="record-name">{{item.name}}</view>
+              <view class="stat-bar">
+                <view class="stat-bar-fill income" style="width: {{item.percent}}%;"></view>
+              </view>
+            </view>
+            <view class="stat-amount">{{item.amountText}}</view>
+          </view>
+        </view>
+      </scroll-view>
+      <view class="empty" wx:else>
+        <view class="empty-icon">📊</view>
+        <view class="empty-text">该月暂无记录</view>
+        <view class="empty-sub">记一笔后这里会显示分类统计</view>
+      </view>
+    </block>
+  </view>
+</view>

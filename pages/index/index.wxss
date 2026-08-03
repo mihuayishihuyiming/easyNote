@@ -1,0 +1,714 @@
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 16rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+
+/* ---------- 顶部切换 ---------- */
+.seg-wrap {
+  padding: 8rpx 0 16rpx;
+}
+
+.seg {
+  display: flex;
+  background: #e8eaee;
+  border-radius: 16rpx;
+  padding: 6rpx;
+}
+
+.seg-item {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  border-radius: 12rpx;
+  color: #6b7280;
+  font-size: 28rpx;
+  transition: all 0.2s;
+}
+
+.seg-item.active {
+  background: #ffffff;
+  color: #ff7a1a;
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 20rpx rgba(31, 35, 41, 0.04);
+}
+
+/* ---------- 计算器视图 ---------- */
+.calc-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+  min-height: 0;
+}
+
+.display-card {
+  padding: 24rpx 28rpx 20rpx;
+  flex-shrink: 0;
+}
+
+.edit-tip {
+  font-size: 22rpx;
+  color: #ff7a1a;
+  margin-bottom: 10rpx;
+}
+
+.expr-line {
+  font-size: 26rpx;
+  color: #9aa0a6;
+  height: 40rpx;
+  text-align: right;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.expr-line.err {
+  color: #e64340;
+}
+
+.result-line {
+  margin-top: 6rpx;
+  font-size: 84rpx;
+  font-weight: 700;
+  color: #1f2329;
+  text-align: right;
+  line-height: 1.1;
+  letter-spacing: -1rpx;
+  font-family: "DIN Alternate", -apple-system, "Helvetica Neue", sans-serif;
+}
+
+.type-card {
+  padding: 18rpx 20rpx;
+  flex-shrink: 0;
+}
+
+.date-row {
+  display: flex;
+  align-items: center;
+  padding: 0 4rpx 14rpx;
+}
+
+.date-icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+
+.date-text {
+  flex: 1;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.date-arrow {
+  color: #c0c4cc;
+  font-size: 32rpx;
+}
+
+.type-switch {
+  display: flex;
+  background: #f2f3f5;
+  border-radius: 14rpx;
+  padding: 5rpx;
+}
+
+.type-btn {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  border-radius: 11rpx;
+  color: #6b7280;
+  font-size: 26rpx;
+  transition: all 0.2s;
+}
+
+.type-btn.expense.on {
+  background: #fff1e6;
+  color: #ff7a1a;
+  font-weight: 600;
+}
+
+.type-btn.income.on {
+  background: #e7f8ee;
+  color: #17a952;
+  font-weight: 600;
+}
+
+.cats {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 14rpx;
+}
+
+.cat {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 18rpx;
+  margin: 0 10rpx 10rpx 0;
+  background: #f4f5f7;
+  border-radius: 999rpx;
+  border: 2rpx solid transparent;
+}
+
+.cat.on {
+  background: #fff1e6;
+  border-color: #ffb37a;
+}
+
+.cat-icon {
+  font-size: 28rpx;
+  margin-right: 8rpx;
+}
+
+.cat-name {
+  font-size: 24rpx;
+  color: #4b5563;
+}
+
+.cat.on .cat-name {
+  color: #ff7a1a;
+  font-weight: 600;
+}
+
+.note-input {
+  width: 100%;
+  height: 76rpx;
+  margin-top: 4rpx;
+  background: #f7f8fa;
+  border-radius: 14rpx;
+  padding: 0 20rpx;
+  font-size: 26rpx;
+  color: #1f2329;
+}
+
+.note-placeholder {
+  color: #9aa0a6;
+  font-size: 26rpx;
+}
+
+/* ---------- 键盘 ---------- */
+.keypad-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16rpx;
+  gap: 12rpx;
+  min-height: 300rpx;
+}
+
+.key-row {
+  flex: 1;
+  display: flex;
+  gap: 12rpx;
+  min-height: 0;
+}
+
+.key {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20rpx;
+  font-size: 44rpx;
+  font-weight: 500;
+  color: #1f2329;
+  background: #f4f5f7;
+  user-select: none;
+  transition: all 0.1s;
+}
+
+.key:active {
+  opacity: 0.75;
+  transform: scale(0.97);
+}
+
+.key.fn {
+  background: #e8eaee;
+  color: #4b5563;
+  font-size: 36rpx;
+}
+
+.key.op {
+  background: #fff1e6;
+  color: #ff7a1a;
+  font-size: 40rpx;
+}
+
+.key.save {
+  flex: 2;
+  background: linear-gradient(135deg, #ffb14d, #ff7a1a);
+  color: #ffffff;
+  font-size: 34rpx;
+  font-weight: 600;
+}
+
+.edit-actions {
+  text-align: center;
+  padding: 4rpx 0 0;
+}
+
+.cancel-edit {
+  display: inline-block;
+  padding: 8rpx 24rpx;
+  color: #9aa0a6;
+  font-size: 26rpx;
+}
+
+/* ---------- 明细视图 ---------- */
+.records-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 16rpx;
+}
+
+.summary-item {
+  flex: 1;
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 24rpx;
+  color: #9aa0a6;
+  margin-bottom: 8rpx;
+}
+
+.summary-value {
+  font-size: 32rpx;
+  font-weight: 700;
+}
+
+.summary-value.income {
+  color: #17a952;
+}
+
+.summary-value.expense {
+  color: #ff7a1a;
+}
+
+.summary-value.balance {
+  color: #1f2329;
+}
+
+.summary-divider {
+  width: 2rpx;
+  height: 56rpx;
+  background: #f0f1f3;
+}
+
+.day-card {
+  display: flex;
+  align-items: center;
+  padding: 22rpx 16rpx;
+  margin-top: 16rpx;
+}
+
+.day-item {
+  flex: 1;
+  text-align: center;
+}
+
+.day-label {
+  font-size: 24rpx;
+  color: #9aa0a6;
+  margin-bottom: 8rpx;
+}
+
+.day-amount {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #ff7a1a;
+}
+
+.day-sub {
+  font-size: 22rpx;
+  margin-top: 4rpx;
+  min-height: 28rpx;
+}
+
+.day-sub.income {
+  color: #17a952;
+}
+
+.filter-row {
+  display: flex;
+  gap: 14rpx;
+  padding: 20rpx 0 12rpx;
+}
+
+.filter-chip {
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
+  background: #ffffff;
+  color: #6b7280;
+  font-size: 24rpx;
+}
+
+.filter-chip.on {
+  background: #1f2329;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.list-scroll {
+  flex: 1;
+  min-height: 0;
+}
+
+.group {
+  margin-bottom: 20rpx;
+}
+
+.group-label {
+  font-size: 24rpx;
+  color: #9aa0a6;
+  padding: 0 8rpx 12rpx;
+}
+
+.record-list {
+  padding: 0 24rpx;
+}
+
+.record {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.record:last-child {
+  border-bottom: none;
+}
+
+.record:active {
+  opacity: 0.7;
+}
+
+.record-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  background: #f4f5f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34rpx;
+  margin-right: 20rpx;
+  flex-shrink: 0;
+}
+
+.record-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.record-name {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.record-note {
+  font-size: 22rpx;
+  color: #9aa0a6;
+  margin-top: 4rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.record-amount {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f2329;
+}
+
+.record-amount.income {
+  color: #17a952;
+}
+
+.clear-all {
+  text-align: center;
+  padding: 28rpx 0 40rpx;
+  color: #b3b8bf;
+  font-size: 24rpx;
+}
+
+.clear-all:active {
+  opacity: 0.6;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon {
+  font-size: 96rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  font-size: 30rpx;
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.empty-sub {
+  font-size: 24rpx;
+  color: #9aa0a6;
+  margin-top: 10rpx;
+}
+
+/* ---------- 统计视图 ---------- */
+.stats-period {
+  display: flex;
+  justify-content: center;
+  padding: 16rpx 0 12rpx;
+}
+
+.month-picker {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 999rpx;
+  padding: 12rpx 32rpx;
+  box-shadow: 0 4rpx 16rpx rgba(31, 35, 41, 0.05);
+}
+
+.month-icon {
+  font-size: 26rpx;
+  margin-right: 10rpx;
+}
+
+.month-text {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.month-arrow {
+  font-size: 22rpx;
+  color: #9aa0a6;
+  margin-left: 10rpx;
+}
+
+.back-month-btn {
+  margin-left: 16rpx;
+  padding: 12rpx 26rpx;
+  background: linear-gradient(135deg, #ffb14d, #ff7a1a);
+  color: #ffffff;
+  font-size: 24rpx;
+  font-weight: 600;
+  border-radius: 999rpx;
+  box-shadow: 0 4rpx 16rpx rgba(255, 122, 26, 0.25);
+}
+
+.back-month-btn:active {
+  opacity: 0.8;
+}
+
+.stat-card {
+  margin-bottom: 20rpx;
+}
+
+.stat-row:active {
+  opacity: 0.7;
+}
+
+/* ---------- 条形统计图 ---------- */
+.chart-card {
+  margin-bottom: 20rpx;
+}
+
+.chart {
+  display: flex;
+  align-items: flex-end;
+  padding: 24rpx 8rpx 0;
+  height: 330rpx;
+}
+
+.chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  min-width: 0;
+}
+
+.chart-amount {
+  font-size: 16rpx;
+  color: #4b5563;
+  margin-bottom: 6rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.chart-bar-wrap {
+  width: 36rpx;
+  height: 180rpx;
+  display: flex;
+  align-items: flex-end;
+}
+
+.chart-bar {
+  width: 100%;
+  background: linear-gradient(180deg, #ffb14d, #ff7a1a);
+  border-radius: 8rpx 8rpx 0 0;
+  min-height: 6rpx;
+}
+
+.chart-icon {
+  font-size: 26rpx;
+  margin-top: 10rpx;
+}
+
+.chart-name {
+  font-size: 20rpx;
+  color: #6b7280;
+  margin-top: 4rpx;
+}
+
+.stat-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+
+.stat-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.stat-total {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f2329;
+}
+
+.stat-total.expense {
+  color: #ff7a1a;
+}
+
+.stat-total.income {
+  color: #17a952;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #f2f3f5;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+}
+
+.stat-row .record-name {
+  font-size: 26rpx;
+}
+
+.stat-bar {
+  margin-top: 10rpx;
+  height: 10rpx;
+  background: #f2f3f5;
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 999rpx;
+}
+
+.stat-bar-fill.expense {
+  background: linear-gradient(90deg, #ffb14d, #ff7a1a);
+}
+
+.stat-bar-fill.income {
+  background: linear-gradient(90deg, #5fd18c, #17a952);
+}
+
+.stat-amount {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1f2329;
+}
+
+/* ---------- 明细：双击标红提醒 ---------- */
+.record.marked {
+  background: #fff5f5;
+}
+
+.record.marked .record-icon {
+  background: #ffe3e3;
+}
+
+.record-amount {
+  display: flex;
+  align-items: center;
+}
+
+.record-amount.marked {
+  color: #e64340;
+}
+
+.mark-text {
+  color: #e64340;
+  font-size: 20rpx;
+  font-weight: 600;
+  margin-right: 8rpx;
+  white-space: nowrap;
+}
+
+/* ---------- 统计分类下钻详情 ---------- */
+.detail-head {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 8rpx 16rpx;
+}
+
+.detail-back {
+  font-size: 26rpx;
+  color: #ff7a1a;
+  padding: 8rpx 20rpx 8rpx 4rpx;
+}
+
+.detail-title {
+  flex: 1;
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #1f2329;
+  text-align: center;
+}
+
+.record-mark {
+  display: inline-block;
+  margin-top: 6rpx;
+  color: #e64340;
+  font-size: 22rpx;
+  font-weight: 600;
+}

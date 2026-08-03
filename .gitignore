@@ -1,0 +1,8 @@
+project.private.config.json
+node_modules/
+miniprogram_npm/
+private.key
+private.*.key
+preview-qrcode.png
+.DS_Store
+*.log
